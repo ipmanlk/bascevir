@@ -1,9 +1,6 @@
 const dicts = [{
-	id: "cambridge",
-	title: "Cambridge Dictionary",
-}, {
-	id: "tureng",
-	title: "Tureng"
+	id: "datamuse",
+	title: "Datamuse API",
 }];
 
 function onCreated() {
@@ -56,7 +53,7 @@ browser.storage.sync.get(['activeDictId', 'permanentBoxesValue']).then(values =>
 	browser.contextMenus.create({
 		id: "permanentBoxes",
 		type: "checkbox",
-		title: "Çeviriler sayfa üzerinde kalsın",
+		title: "Keep translations on page",
 		contexts: ["all"],
 		checked: permanentBoxesValue
 	}, onCreated);

@@ -1,24 +1,23 @@
 const linkCreator = {
-	cambridge: (sl, tl, word) => `https://dictionary.cambridge.org/dictionary/${sl}-${tl}/${word}`,
-	tureng: (sl, tl, word) => `https://tureng.com/en/${tl}-${sl}/${word}`
+	datamuse: (word) => `https://api.datamuse.com/words?max=1&md=d&sp=${word}`,
 }
 
-const getWord = (sl, tl, q) => {
-  q = q.replace(/(\.|\?|,)/g, "");
-	return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURI(q)}`)
-  	.then(res => res.ok ? res.json() : res.text());
+const getWord = (q) => {
+	return fetch(`https://api.datamuse.com/words?max=1&md=d&sp=${q}`)
+		.then(res => res.json())
+		.then(resJson => resJson[0].defs[0].split("\t")[1])
 }
 
 const createPopup = (id, word, text, x, y, clientWidth) => {
 	let offsetX = 350 - x;
-  let r = x > (clientWidth / 2) ? 1 : -1;
-  if (r === 1) {
-    offsetX = clientWidth - offsetX;
-  }
+	let r = x > (clientWidth / 2) ? 1 : -1;
+	if (r === 1) {
+		offsetX = clientWidth - offsetX;
+	}
 
-  const popup = document.createElement("div");
-  popup.setAttribute("id", id);
-  popup.setAttribute("style",`
+	const popup = document.createElement("div");
+	popup.setAttribute("id", id);
+	popup.setAttribute("style", `
     top:${y}px;
     left:${y}px;
     width:0px;
@@ -27,9 +26,9 @@ const createPopup = (id, word, text, x, y, clientWidth) => {
     z-index:5;
     user-select:none;`);
 
-  const box = document.createElement("div");
-  box.setAttribute("class", "box");
-  box.setAttribute("style",`
+	const box = document.createElement("div");
+	box.setAttribute("class", "box");
+	box.setAttribute("style", `
     display:inline;
     max-width:300px;
     width:max-content;
@@ -37,15 +36,15 @@ const createPopup = (id, word, text, x, y, clientWidth) => {
     margin-top:-5px;
     z-index:0;`);
 
-  const link = document.createElement("a");
-  link.href = `https://translate.google.com/#view=home&op=translate&sl=en&tl=tr&text=${word}`;
-  link.target = "_blank";
-  link.style.outline = "0";
+	const link = document.createElement("a");
+	link.href = `https://dictionary.cambridge.org/dictionary/english/${word}`;
+	link.target = "_blank";
+	link.style.outline = "0";
 
-  const content = document.createElement("span");
-  content.innerText = text;
-  content.setAttribute("class", "onetap-content");
-  content.setAttribute("style",`
+	const content = document.createElement("span");
+	content.innerText = text;
+	content.setAttribute("class", "onetap-content");
+	content.setAttribute("style", `
     border-radius: 5px 0px 0px 5px;
     padding: 10px 20px;
     background-color: #333;
@@ -54,42 +53,9 @@ const createPopup = (id, word, text, x, y, clientWidth) => {
     color: #fff;
     display: inline-block;`);
 
-  link.appendChild(content);
-
-  const removeButton = document.createElement("div");
-  removeButton.onclick = _ =>
-    removeHighlight(document.querySelectorAll(`span.${id}`));
-  removeButton.className = "highlight-remove-button";
-  removeButton.setAttribute("style",`
-    position: absolute;
-    height: 50%;
-    width: 20px;
-    top: 0;
-    right: -20px;
-    text-align: center;
-    color: #fff;
-    background-color: rgb(216, 76, 76);
-    border-radius: 0px 5px 0px 0px;
-    font-size: 14px;`);
-
-  const infoButton = document.createElement("div");
-  infoButton.onclick = _ => goDictionary(id, word);
-  infoButton.className = "highlight-info-button";
-  infoButton.setAttribute("style",`
-    position: absolute;
-    height: 50%;
-    width: 20px;
-    top: 50%;
-    right: -20px;
-    text-align: center;
-    color: #fff;
-    background-color: rgb(0, 108, 255);
-    border-radius: 0px 0px 5px 0px;
-    font-size: 14px;`);
+	link.appendChild(content);
 
 	box.appendChild(link)
-	box.appendChild(removeButton)
-	box.appendChild(infoButton)
 
 	popup.appendChild(box);
 	document.body.appendChild(popup);
@@ -103,18 +69,18 @@ const createPopup = (id, word, text, x, y, clientWidth) => {
 }
 
 const injectHighlight = (selection, id) => {
-	let {anchorOffset: start, focusOffset: end} = selection;
-	if(start > end){
+	let { anchorOffset: start, focusOffset: end } = selection;
+	if (start > end) {
 		[start, end] = [end, start]
 	}
 
 	let parentElement = selection.anchorNode.parentElement;
 
 	const highlight = Array.from(selection.anchorNode.textContent).map((_, key) => {
-		if(key === start){
+		if (key === start) {
 			return `<span class="${id} onetap-highlight" style="background-color: #b65656; color: #fff">${_}`
 		}
-		if(key === end){
+		if (key === end) {
 			return `${_.trim("")}</span> `
 		}
 		return _;
@@ -122,35 +88,35 @@ const injectHighlight = (selection, id) => {
 
 	parentElement.innerHTML = parentElement.innerHTML.replace(selection.anchorNode.textContent, highlight);
 
-	let {top, left, width, height} = document.querySelector(`span.${id}`).getBoundingClientRect();
-	if((left + window.pageXOffset + width) < document.body.clientWidth/2){
+	let { top, left, width, height } = document.querySelector(`span.${id}`).getBoundingClientRect();
+	if ((left + window.pageXOffset + width) < document.body.clientWidth / 2) {
 		width = 0;
 	}
 
 	const willRemoveHighlights = Array.from(document.querySelectorAll("span.onetap-highlight"))
-	.filter(el => el.getBoundingClientRect().top === top)
-	.filter(el => el.classList[0] !== id);
+		.filter(el => el.getBoundingClientRect().top === top)
+		.filter(el => el.classList[0] !== id);
 
 	removeHighlight(willRemoveHighlights);
 
-	return { x: left + window.pageXOffset + width, y: top + window.pageYOffset + height - 5,  }
+	return { x: left + window.pageXOffset + width, y: top + window.pageYOffset + height - 5, }
 }
 
 const removeHighlight = (nodes) => {
-	for(let el of nodes){
+	for (let el of nodes) {
 		let parentElement = el.parentElement
 		el.outerHTML = el.innerText;
 		parentElement = parentElement.innerHTML.replace(/\n/gm, "")
 		let div = document.querySelector(`div#${el.classList[0]}`);
-		if(div){ div.remove() }
+		if (div) { div.remove() }
 	}
 }
 
-const goDictionary = (id, word, sourcelang="english", targetlang="turkish") => {
+const goDictionary = (id, word) => {
 	browser.storage.sync.get('activeDictId').then(value => {
 		const activeDict = value.activeDictId;
-		if(activeDict && activeDict in linkCreator){
-			const link = linkCreator[activeDict](sourcelang, targetlang, word)
+		if (activeDict && activeDict in linkCreator) {
+			const link = linkCreator[activeDict](word)
 			window.open(link, '_blank').focus();
 			return;
 		}
@@ -158,25 +124,25 @@ const goDictionary = (id, word, sourcelang="english", targetlang="turkish") => {
 }
 
 
-document.addEventListener("click",  event => {
-	if(!event.ctrlKey) {
+document.addEventListener("click", event => {
+	if (!event.ctrlKey) {
 		browser.storage.sync.get('permanentBoxesValue')
-		.then(({permanentBoxesValue}) => {
-			const exclude_classnames = ["onetap-content", "highlight-info-button"];
-			if(!permanentBoxesValue && !Array.from(event.target.classList).some(_class => exclude_classnames.includes(_class))){
-				removeHighlight(document.querySelectorAll('span.onetap-highlight'))
-			}
-		})
+			.then(({ permanentBoxesValue }) => {
+				const exclude_classnames = ["onetap-content", "highlight-info-button"];
+				if (!permanentBoxesValue && !Array.from(event.target.classList).some(_class => exclude_classnames.includes(_class))) {
+					removeHighlight(document.querySelectorAll('span.onetap-highlight'))
+				}
+			})
 		return
-   	}
+	}
 
 	const selection = window.getSelection();
 	const word = selection.toString();
-	if(!word){ return };
+	if (!word) { return };
 
 	const id = "h" + Math.random().toString(36).substring(7);
-	const {x, y} = injectHighlight(selection, id)
-	getWord("en", "tr", word).then(([[[meaning]]]) => {
+	const { x, y } = injectHighlight(selection, id)
+	getWord(word).then((meaning) => {
 		createPopup(id, word, meaning, x, y, document.body.clientWidth)
 	}).catch(console.log)
 });
